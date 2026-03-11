@@ -1,0 +1,13 @@
+# Sensitive config — never commit credentials
+config/settings.py
+
+# Runtime files
+logs/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# IDE
+.vscode/
+.idea/
