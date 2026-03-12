@@ -12,3 +12,6 @@ anyio>=4.4.0
 # Screenshot capture
 mss>=9.0.1
 Pillow>=10.0.0
+
+# Web streaming
+flask>=3.0.0

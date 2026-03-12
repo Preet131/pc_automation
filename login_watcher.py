@@ -25,9 +25,6 @@ import logging
 import subprocess
 from datetime import datetime, timezone
 
-import mss
-from PIL import Image
-
 from config.settings import AUTHORIZED_USER_ID
 
 logger = logging.getLogger(__name__)
@@ -41,18 +38,6 @@ LOGON_TYPE_LABELS = {
 
 # Poll interval (seconds) for the background event watcher
 POLL_INTERVAL = 10
-
-
-# ── Screenshot helper ──────────────────────────────────────────────────────────
-def _take_screenshot() -> io.BytesIO:
-    """Capture the primary monitor and return a JPEG BytesIO buffer."""
-    with mss.mss() as sct:
-        raw = sct.grab(sct.monitors[1])
-    img = Image.frombytes("RGB", raw.size, raw.bgra, "raw", "BGRX")
-    buf = io.BytesIO()
-    img.save(buf, format="JPEG", quality=80)
-    buf.seek(0)
-    return buf
 
 
 # ── Windows Event Log query ────────────────────────────────────────────────────
@@ -118,30 +103,19 @@ async def send_login_alert(bot, logon_type: str = "2", event_time: str | None = 
     caption = (
         f"{emoji} *{label} detected!*\n"
         f"🗓 {date}  🕐 {now}\n\n"
-        f"_Your PC was just accessed. Here's what the screen looks like right now._"
+        f"_Your PC was just accessed (screen unlocked or logged in)._\n"
+        f"Use `/screenshot` or `/stream` to view the screen live."
     )
 
     try:
-        loop = asyncio.get_event_loop()
-        buf = await loop.run_in_executor(None, _take_screenshot)
-        await bot.send_photo(
+        await bot.send_message(
             chat_id=AUTHORIZED_USER_ID,
-            photo=buf,
-            caption=caption,
+            text=caption,
             parse_mode="Markdown",
         )
-        logger.info("Login alert sent — type=%s time=%s", logon_type, now)
+        logger.info("Login text alert sent — type=%s time=%s", logon_type, now)
     except Exception as exc:
-        logger.error("Failed to send login alert: %s", exc, exc_info=True)
-        # Fallback: send text-only if photo fails
-        try:
-            await bot.send_message(
-                chat_id=AUTHORIZED_USER_ID,
-                text=caption,
-                parse_mode="Markdown",
-            )
-        except Exception:
-            pass
+        logger.error("Failed to send login text alert: %s", exc, exc_info=True)
 
 
 # ── Background watcher ─────────────────────────────────────────────────────────
