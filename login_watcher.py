@@ -86,7 +86,8 @@ try {{
     try:
         result = subprocess.run(
             ["powershell", "-NonInteractive", "-NoProfile", "-Command", ps_script],
-            capture_output=True, text=True, timeout=8
+            capture_output=True, text=True, timeout=8,
+            creationflags=subprocess.CREATE_NO_WINDOW,
         )
         events = []
         for line in result.stdout.strip().splitlines():
